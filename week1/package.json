@@ -3,17 +3,36 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "test": "jest",
+    "lint": "eslint --config ./eslint.config.mjs .",
+    "dev": "nodemon -r dotenv/config ./bin/www"
   },
   "dependencies": {
+    "@shelf/jest-mongodb": "^6.0.2",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
+    "dotenv": "^17.2.4",
+    "eslint-plugin-jest": "^29.12.2",
     "express": "^4.22.1",
     "http-errors": "~1.6.3",
     "jade": "^0.29.0",
     "morgan": "^1.10.1"
   },
   "devDependencies": {
-    "mongodb": "^7.1.0"
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "globals": "^17.3.0",
+    "jest": "^30.2.0",
+    "mongodb": "^7.1.0",
+    "supertest": "^7.2.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "preset": "@shelf/jest-mongodb",
+    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ]
   }
 }
