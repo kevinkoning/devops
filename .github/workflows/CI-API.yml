@@ -13,8 +13,8 @@ on:
       - 'week1/**'
 
 jobs:
+  name: CI
   test:
-    name: CI
     runs-on: ubuntu-latest
     
     strategy:
