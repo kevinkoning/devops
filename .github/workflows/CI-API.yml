@@ -14,7 +14,7 @@ on:
 
 jobs:
   test:
-  name: CI
+    name: CI
     runs-on: ubuntu-latest
     
     strategy:
