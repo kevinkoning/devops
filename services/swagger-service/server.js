@@ -453,7 +453,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'swagger-service' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
-  console.log(`OpenAPI spec available at http://localhost:${PORT}/openapi.json`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
+    console.log(`OpenAPI spec available at http://localhost:${PORT}/openapi.json`);
+  });
+}
+
+module.exports = app;

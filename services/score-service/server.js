@@ -398,6 +398,10 @@ app.get('/score/circuit-status', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3006;
-app.listen(PORT, () => {
-  console.log(`Score Service running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Score Service running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

@@ -4,12 +4,20 @@
   "description": "PhotoPrestiges API Documentation",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest --forceExit --testTimeout=10000"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "swagger-ui-express": "^5.0.0",
     "js-yaml": "^4.1.0",
-    "cors": "^2.8.5"
+    "swagger-ui-express": "^5.0.0"
   }
 }

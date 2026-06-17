@@ -36,6 +36,10 @@ app.get('/targets/circuit-status', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3003;
-app.listen(PORT, () => {
-  console.log(`Target Service running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Target Service running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

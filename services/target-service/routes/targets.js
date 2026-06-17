@@ -1,10 +1,8 @@
 const express = require('express');
-const multer = require('multer');
-const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const Target = require('../models/Target');
-const { uploadFile, deleteFile } = require('../utils/minio');
+const { deleteFile } = require('../utils/minio');
 
 const SCORE_SERVICE_URL = process.env.SCORE_SERVICE_URL || 'http://localhost:3006';
 

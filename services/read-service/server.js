@@ -117,14 +117,9 @@ app.get('/read/leaderboard', async (req, res) => {
 
 app.get('/read/stats', async (req, res) => {
   try {
-    const [targetsRes, leaderboardRes] = await Promise.all([
+    const [targetsRes, activeRes] = await Promise.all([
       axios.get(`${TARGET_SERVICE_URL}/targets?limit=1`),
-      axios.get(`${SCORE_SERVICE_URL}/score/leaderboard?limit=1`).catch(() => ({ data: {} }))
-    ]);
-
-    const [activeRes, submissionsRes] = await Promise.all([
-      axios.get(`${TARGET_SERVICE_URL}/targets?status=active&limit=1`),
-      axios.get(`${SCORE_SERVICE_URL}/score/leaderboard`).catch(() => ({ data: { leaderboard: [] } }))
+      axios.get(`${TARGET_SERVICE_URL}/targets?status=active&limit=1`)
     ]);
 
     res.json({
@@ -171,6 +166,10 @@ app.get('/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3007;
-app.listen(PORT, () => {
-  console.log(`Read Service running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Read Service running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

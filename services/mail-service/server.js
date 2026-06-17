@@ -49,7 +49,7 @@ mailQueue.process(async (job) => {
   const { to, subject, html } = job.data;
   
   try {
-    const result = await sendMailCircuitBreaker.fire({
+    await sendMailCircuitBreaker.fire({
       from: process.env.FROM_EMAIL || 'noreply@photoprestiges.com',
       to,
       subject,
@@ -213,6 +213,10 @@ app.get('/mail/circuit-status', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3004;
-app.listen(PORT, () => {
-  console.log(`Mail Service running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Mail Service running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

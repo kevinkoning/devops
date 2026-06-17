@@ -157,8 +157,12 @@ app.get('/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3005;
-app.listen(PORT, () => {
-  console.log(`Clock Service running on port ${PORT}`);
-  console.log('Deadline checker started (every minute)');
-  console.log('Reminder sender started (every 6 hours)');
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Clock Service running on port ${PORT}`);
+    console.log('Deadline checker started (every minute)');
+    console.log('Reminder sender started (every 6 hours)');
+  });
+}
+
+module.exports = app;

@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "lint": "eslint services --ext .js --ignore-pattern '*/node_modules/*' --ignore-pattern '*/tests/*'",
+    "test": "for service in auth-service register-service target-service mail-service clock-service score-service read-service swagger-service; do echo \"\\n=== $service ===\"; npm test --prefix services/$service; done"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
