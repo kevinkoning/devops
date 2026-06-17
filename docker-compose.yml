@@ -1,0 +1,293 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: photoprestiges-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - photoprestiges-net
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: photoprestiges-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - photoprestiges-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: photoprestiges-minio
+    ports:
+      - "9010:9000"
+      - "9011:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
+    networks:
+      - photoprestiges-net
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: photoprestiges-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - photoprestiges-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9010 minioadmin minioadmin123;
+      /usr/bin/mc mb myminio/photoprestiges-images --ignore-existing;
+      /usr/bin/mc anonymous set public myminio/photoprestiges-images;
+      exit 0;
+      "
+    networks:
+      - photoprestiges-net
+
+  auth-service:
+    build: ./services/auth-service
+    container_name: photoprestiges-auth
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET:-supersecretkey123}
+      - MONGODB_URI=mongodb://mongodb:27017/photoprestiges-auth
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
+  register-service:
+    build: ./services/register-service
+    container_name: photoprestiges-register
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - TARGET_SERVICE_URL=http://target-service:3003
+    depends_on:
+      target-service:
+        condition: service_started
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
+  target-service:
+    build: ./services/target-service
+    container_name: photoprestiges-target
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - MONGODB_URI=mongodb://mongodb:27017/photoprestiges-targets
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_EXTERNAL_PORT=9010
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_BUCKET=photoprestiges-images
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - SCORE_SERVICE_URL=http://score-service:3006
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
+  mail-service:
+    build: ./services/mail-service
+    container_name: photoprestiges-mail
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - REDIS_URL=redis://redis:6379
+      - SMTP_HOST=${SMTP_HOST:-smtp.mailtrap.io}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - FROM_EMAIL=noreply@photoprestiges.com
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
+  clock-service:
+    build: ./services/clock-service
+    container_name: photoprestiges-clock
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+      - TARGET_SERVICE_URL=http://target-service:3003
+      - SCORE_SERVICE_URL=http://score-service:3006
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      target-service:
+        condition: service_started
+      score-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
+  score-service:
+    build: ./services/score-service
+    container_name: photoprestiges-score
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+      - MONGODB_URI=mongodb://mongodb:27017/photoprestiges-scores
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_EXTERNAL_PORT=9010
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_BUCKET=photoprestiges-images
+      - IMAGGA_API_KEY=${IMAGGA_API_KEY:-}
+      - IMAGGA_API_SECRET=${IMAGGA_API_SECRET:-}
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - TARGET_SERVICE_URL=http://target-service:3003
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      target-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
+  read-service:
+    build: ./services/read-service
+    container_name: photoprestiges-read
+    ports:
+      - "3007:3007"
+    environment:
+      - NODE_ENV=production
+      - PORT=3007
+      - TARGET_SERVICE_URL=http://target-service:3003
+      - SCORE_SERVICE_URL=http://score-service:3006
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      target-service:
+        condition: service_started
+      score-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
+  swagger-service:
+    build: ./services/swagger-service
+    container_name: photoprestiges-swagger
+    ports:
+      - "3008:3008"
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
+  gateway:
+    image: nginx:alpine
+    container_name: photoprestiges-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./services/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - register-service
+      - target-service
+      - mail-service
+      - clock-service
+      - score-service
+      - read-service
+      - swagger-service
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  minio_data:
+  rabbitmq_data:
+
+networks:
+  photoprestiges-net:
+    driver: bridge

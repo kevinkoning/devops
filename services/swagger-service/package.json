@@ -1,0 +1,15 @@
+{
+  "name": "swagger-service",
+  "version": "1.0.0",
+  "description": "PhotoPrestiges API Documentation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "swagger-ui-express": "^5.0.0",
+    "js-yaml": "^4.1.0",
+    "cors": "^2.8.5"
+  }
+}
