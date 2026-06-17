@@ -1,5 +1,3 @@
-# PhotoPrestiges - Massive Multiplayer Photo Scavenger Hunt
+# devops
 
-Een microservices-applicatie voor een online fotospuurtocht waar gebruikers foto's uploaden als "targets" en anderen deze proberen na te maken vanaf exact hetzelfde camerastandpunt.
-
-
+[![API & Week1 CI Pipeline](https://github.com/kevinkoning/devops/actions/workflows/CI-API.yml/badge.svg)](https://github.com/kevinkoning/devops/actions/workflows/CI-API.yml)
