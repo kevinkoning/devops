@@ -283,10 +283,50 @@ services:
       - photoprestiges-net
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: photoprestiges-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - auth-service
+      - register-service
+      - target-service
+      - mail-service
+      - clock-service
+      - score-service
+      - read-service
+      - swagger-service
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: photoprestiges-grafana
+    ports:
+      - "3009:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - photoprestiges-net
+    restart: unless-stopped
+
 volumes:
   mongodb_data:
   minio_data:
   rabbitmq_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   photoprestiges-net:

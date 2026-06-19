@@ -7,6 +7,7 @@ const FormData = require('form-data');
 const Minio = require('minio');
 const Opossum = require('opossum');
 const rabbitmq = require('./rabbitmq');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
 
 const TARGET_SERVICE_URL = process.env.TARGET_SERVICE_URL || 'http://localhost:3003';
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
@@ -14,6 +15,7 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001'
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+app.use(metricsMiddleware);
 
 mongoose.set('strictPopulate', false);
 
@@ -384,6 +386,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'score-service' });
 });
 
+app.get('/metrics', metricsHandler);
+
 app.get('/score/circuit-status', (req, res) => {
   res.json({
     imagga: {
@@ -398,6 +402,10 @@ app.get('/score/circuit-status', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3006;
-app.listen(PORT, () => {
-  console.log(`Score Service running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Score Service running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

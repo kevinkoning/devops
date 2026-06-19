@@ -5,10 +5,12 @@ const Queue = require('bull');
 const nodemailer = require('nodemailer');
 const Opossum = require('opossum');
 const rabbitmq = require('./rabbitmq');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware);
 
 const mailQueue = new Queue('mail', process.env.REDIS_URL || 'redis://localhost:6379');
 
@@ -30,13 +32,12 @@ const mailOptions = {
 };
 
 const sendMailCircuitBreaker = new Opossum(async (options) => {
-  const result = await transporter.sendMail({
+  return transporter.sendMail({
     from: options.from,
     to: options.to,
     subject: options.subject,
     html: options.html
   });
-  return result;
 }, mailOptions);
 
 sendMailCircuitBreaker.on('success', () => console.log('Email sent successfully'));
@@ -49,7 +50,7 @@ mailQueue.process(async (job) => {
   const { to, subject, html } = job.data;
   
   try {
-    const result = await sendMailCircuitBreaker.fire({
+    await sendMailCircuitBreaker.fire({
       from: process.env.FROM_EMAIL || 'noreply@photoprestiges.com',
       to,
       subject,
@@ -199,6 +200,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'mail-service' });
 });
 
+app.get('/metrics', metricsHandler);
+
 app.get('/mail/circuit-status', (req, res) => {
   res.json({
     smtp: {
@@ -213,6 +216,10 @@ app.get('/mail/circuit-status', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3004;
-app.listen(PORT, () => {
-  console.log(`Mail Service running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Mail Service running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

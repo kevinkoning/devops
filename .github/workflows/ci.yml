@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-auth-service:
+    name: Auth Service Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/auth-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/auth-service/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  test-register-service:
+    name: Register Service Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/register-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/register-service/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  test-target-service:
+    name: Target Service Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/target-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/target-service/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  test-mail-service:
+    name: Mail Service Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/mail-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/mail-service/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  test-clock-service:
+    name: Clock Service Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/clock-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/clock-service/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  test-score-service:
+    name: Score Service Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/score-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/score-service/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  test-read-service:
+    name: Read Service Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/read-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/read-service/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  test-swagger-service:
+    name: Swagger Service Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/swagger-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/swagger-service/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  lint:
+    name: Code Style Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm run lint

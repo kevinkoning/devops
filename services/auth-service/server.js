@@ -4,12 +4,14 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(metricsMiddleware);
 
 mongoose.set('strictPopulate', false);
 
@@ -31,7 +33,13 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'auth-service' });
 });
 
+app.get('/metrics', metricsHandler);
+
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Auth Service running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Auth Service running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
