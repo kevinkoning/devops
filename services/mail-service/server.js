@@ -32,13 +32,12 @@ const mailOptions = {
 };
 
 const sendMailCircuitBreaker = new Opossum(async (options) => {
-  const result = await transporter.sendMail({
+  return transporter.sendMail({
     from: options.from,
     to: options.to,
     subject: options.subject,
     html: options.html
   });
-  return result;
 }, mailOptions);
 
 sendMailCircuitBreaker.on('success', () => console.log('Email sent successfully'));
