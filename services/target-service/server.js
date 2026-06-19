@@ -4,11 +4,13 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const targetRoutes = require('./routes/targets');
 const { uploadFileCircuitBreaker } = require('./utils/minio');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware);
 
 mongoose.set('strictPopulate', false);
 
@@ -21,6 +23,8 @@ app.use('/targets', targetRoutes);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'target-service' });
 });
+
+app.get('/metrics', metricsHandler);
 
 app.get('/targets/circuit-status', (req, res) => {
   res.json({

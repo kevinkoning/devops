@@ -2,10 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware);
 
 const TARGET_SERVICE_URL = process.env.TARGET_SERVICE_URL || 'http://localhost:3003';
 const SCORE_SERVICE_URL = process.env.SCORE_SERVICE_URL || 'http://localhost:3006';
@@ -164,6 +166,8 @@ app.get('/read/user/:userId', async (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'read-service' });
 });
+
+app.get('/metrics', metricsHandler);
 
 const PORT = process.env.PORT || 3007;
 if (require.main === module) {

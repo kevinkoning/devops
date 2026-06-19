@@ -5,10 +5,12 @@ const Queue = require('bull');
 const nodemailer = require('nodemailer');
 const Opossum = require('opossum');
 const rabbitmq = require('./rabbitmq');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware);
 
 const mailQueue = new Queue('mail', process.env.REDIS_URL || 'redis://localhost:6379');
 
@@ -198,6 +200,8 @@ rabbitmq.start({
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'mail-service' });
 });
+
+app.get('/metrics', metricsHandler);
 
 app.get('/mail/circuit-status', (req, res) => {
   res.json({

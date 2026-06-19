@@ -4,10 +4,12 @@ const cron = require('node-cron');
 const cors = require('cors');
 const axios = require('axios');
 const rabbitmq = require('./rabbitmq');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware);
 
 const TARGET_SERVICE_URL = process.env.TARGET_SERVICE_URL || 'http://localhost:3003';
 const SCORE_SERVICE_URL = process.env.SCORE_SERVICE_URL || 'http://localhost:3006';
@@ -155,6 +157,8 @@ app.post('/clock/trigger', async (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'clock-service' });
 });
+
+app.get('/metrics', metricsHandler);
 
 const PORT = process.env.PORT || 3005;
 if (require.main === module) {

@@ -1,12 +1,14 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const cors = require('cors');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
 
 const app = express();
 const PORT = process.env.PORT || 3008;
 
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware);
 
 const openApiSpec = {
   openapi: '3.0.0',
@@ -452,6 +454,8 @@ app.get('/openapi.json', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'swagger-service' });
 });
+
+app.get('/metrics', metricsHandler);
 
 if (require.main === module) {
   app.listen(PORT, () => {
