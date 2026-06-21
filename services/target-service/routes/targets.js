@@ -77,7 +77,8 @@ router.get('/', async (req, res) => {
     const { status, lat, lng, radius, limit = 20, skip = 0 } = req.query;
     
     const query = {};
-    
+    let isGeoQuery = false;
+
     if (status) {
       query.status = status;
     } else {
@@ -89,7 +90,7 @@ router.get('/', async (req, res) => {
       const longitude = parseFloat(lng);
       const searchRadius = parseFloat(radius) || 10;
 
-      query.location = {
+      query.geoLocation = {
         $near: {
           $geometry: {
             type: 'Point',
@@ -98,15 +99,25 @@ router.get('/', async (req, res) => {
           $maxDistance: searchRadius * 1000
         }
       };
+      isGeoQuery = true;
     }
 
-    const targets = await Target.find(query)
+    let targetsQuery = Target.find(query)
       .lean()
       .limit(parseInt(limit))
-      .skip(parseInt(skip))
-      .sort({ createdAt: -1 });
+      .skip(parseInt(skip));
 
-    const total = await Target.countDocuments(query);
+    if (!isGeoQuery) {
+      targetsQuery = targetsQuery.sort({ createdAt: -1 });
+    }
+
+    const targets = await targetsQuery;
+
+    // $near mag niet gebruikt worden binnen countDocuments (draait als aggregation),
+    // dus bij een geo-zoekopdracht gebruiken we het aantal gevonden resultaten als total.
+    const total = isGeoQuery
+      ? targets.length
+      : await Target.countDocuments(query);
 
     res.json({ targets, total });
   } catch (error) {

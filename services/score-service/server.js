@@ -205,7 +205,7 @@ app.post('/score/submit', async (req, res) => {
     const submittedAt = new Date();
     const finalScore = calculateFinalScore(
       imageSimilarity,
-      target.createdAt,
+      new Date(target.createdAt),
       submittedAt
     );
 
