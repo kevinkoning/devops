@@ -40,6 +40,17 @@ const targetSchema = new mongoose.Schema({
       max: 50000
     }
   },
+  geoLocation: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number],
+      default: [0, 0]
+    }
+  },
   deadline: {
     type: Date,
     required: true
@@ -67,13 +78,20 @@ const targetSchema = new mongoose.Schema({
   }
 });
 
-targetSchema.index({ location: '2dsphere' });
+targetSchema.index({ geoLocation: '2dsphere' });
 targetSchema.index({ status: 1, deadline: 1 });
 targetSchema.index({ ownerId: 1 });
 
 targetSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
-  
+
+  if (this.isModified('location')) {
+    this.geoLocation = {
+      type: 'Point',
+      coordinates: [this.location.longitude, this.location.latitude]
+    };
+  }
+
   if (this.isModified('deadline') && this.deadline <= new Date()) {
     this.status = 'closed';
   }

@@ -76,7 +76,7 @@ services:
     entrypoint: >
       /bin/sh -c "
       sleep 5;
-      /usr/bin/mc alias set myminio http://minio:9010 minioadmin minioadmin123;
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin123;
       /usr/bin/mc mb myminio/photoprestiges-images --ignore-existing;
       /usr/bin/mc anonymous set public myminio/photoprestiges-images;
       exit 0;
